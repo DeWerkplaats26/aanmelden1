@@ -92,7 +92,7 @@ function removeLast() {
 // 📊 Teller ophalen
 function updateCount() {
   const script = document.createElement("script");
-  script.src = URL + "?callback=handleCount";
+  script.src = URL + "?sheet=Sheet2&callback=handleCount";
   document.body.appendChild(script);
 }
 
