@@ -66,7 +66,7 @@
 
 <script>
 const params = new URLSearchParams(window.location.search);
-const sheetName = params.get("sheet") || "Sheet2";
+const sheetIndex = 1;
 
 const URL = "https://script.google.com/macros/s/AKfycbypPFBDmABPfDLdwWFosDjUimPlt1eoTL8ttGOXRUVmIe2my5dn9h4yPnpxn9Q0OHhznA/exec";
 
@@ -102,7 +102,7 @@ function removeLast() {
 function updateCount() {
   try {
     const script = document.createElement("script");
-    script.src = URL + "?sheet=" + sheetName + "&callback=handleCount";
+    script.src = URL + "?index=" + sheetIndex + "&callback=handleCount";
     document.body.appendChild(script);
   } catch (e) {
     console.log(e);
@@ -147,7 +147,7 @@ function sendData(e) {
       leeftijd: inputs[i+1].value,
       telefoon: inputs[i+2].value,
       email: inputs[i+3].value,
-      sheet: sheetName
+      index: sheetIndex
     });
   }
 
