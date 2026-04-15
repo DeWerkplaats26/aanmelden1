@@ -169,7 +169,8 @@ function sendData(e) {
 // START
 window.onload = function() {
   addPersoon();
-  updateCount();
+  updateCount();              // 👈 HIER
+  setInterval(updateCount, 2000); // 👈 en deze (optioneel)
 };
 </script>
 
