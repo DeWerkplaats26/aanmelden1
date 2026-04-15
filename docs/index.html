@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <head>
-  <img src="logo.jpeg" alt="De Werkplaats" style="width: 300px; margin-bottom: 20px;">
-  <title>Workshop Aanmelding</title>
-  <p id="status">Laden...</p>
+  <title>Workshop aanmelden</title>
+
   <style>
     body {
       font-family: Arial;
       background: #f3eeeb;
       text-align: center;
     }
+
     .box {
       background: white;
       padding: 25px;
@@ -19,12 +20,14 @@
       max-width: 400px;
       border-radius: 12px;
     }
+
     input, button {
       width: 90%;
       padding: 12px;
       font-size: 16px;
       margin: 6px;
     }
+
     button {
       background: #645dd1;
       color: white;
@@ -32,46 +35,52 @@
       cursor: pointer;
       border-radius: 25px;
     }
+
     .persoon {
       border-top: 1px solid #ddd;
       margin-top: 10px;
       padding-top: 10px;
     }
-    .remove {
-      background: #999;
-    }
   </style>
 </head>
+
 <body>
 
+<img src="logo.jpeg" style="width: 300px; margin-bottom: 20px;">
+<p id="statusTop">Laden...</p>
+
 <div class="box">
-  <h2>Workshop Aanmelding</h2>
-  <p id="status">Klik op aanmelden om je in te schrijven</p>
+  <h2 id="titel">Workshop</h2>
+  <p id="status">Laden...</p>
 
   <form onsubmit="sendData(event)">
     <div id="personen"></div>
 
-  <button type="submit" id="btn">Aanmelden</button>
-<button type="button" onclick="addPersoon()">+ Persoon toevoegen</button>
-<button type="button" onclick="removeLast()">Verwijderen</button>
+    <button type="submit" id="btn">Aanmelden</button>
+    <button type="button" onclick="addPersoon()">+ Persoon toevoegen</button>
+    <button type="button" onclick="removeLast()">Verwijderen</button>
+  </form>
 
   <p id="melding"></p>
 </div>
 
 <script>
-const URL = "https://script.google.com/macros/s/AKfycbypPFBDmABPfDLdwWFosDjUimPlt1eoTL8ttGOXRUVmIe2my5dn9h4yPnpxn9Q0OHhznA/exec";
-let beschikbarePlekken = 0;
+const params = new URLSearchParams(window.location.search);
+const sheetName = params.get("sheet") || "Sheet2";
 
-// ➕ Persoon toevoegen
+const URL = "https://script.google.com/macros/s/AKfycbypPFBDmABPfDLdwWFosDjUimPlt1eoTL8ttGOXRUVmIe2my5dn9h4yPnpxn9Q0OHhznA/exec";
+
+let beschikbarePlekken = 10;
+
+// ➕ toevoegen
 function addPersoon() {
   const container = document.getElementById("personen");
-  const count = container.children.length + 1;
+  if (!container) return;
 
   const div = document.createElement("div");
   div.className = "persoon";
 
   div.innerHTML = `
-    <h4>Persoon ${count}</h4>
     <input placeholder="Naam" required>
     <input type="number" placeholder="Leeftijd" required>
     <input placeholder="Telefoon">
@@ -81,92 +90,87 @@ function addPersoon() {
   container.appendChild(div);
 }
 
-// ❌ Laatste persoon verwijderen
+// ❌ verwijderen
 function removeLast() {
   const container = document.getElementById("personen");
-  if (container.lastElementChild) {
+  if (container && container.lastElementChild) {
     container.lastElementChild.remove();
   }
 }
 
-// 📊 Teller ophalen
+// 📊 teller ophalen (veilig)
 function updateCount() {
-  const script = document.createElement("script");
-  script.src = URL + "?sheet=Sheet2&callback=handleCount";
-  document.body.appendChild(script);
+  try {
+    const script = document.createElement("script");
+    script.src = URL + "?sheet=" + sheetName + "&callback=handleCount";
+    document.body.appendChild(script);
+  } catch (e) {
+    console.log(e);
+  }
 }
 
 function handleCount(data) {
-  beschikbarePlekken = data.left;
+  try {
+    beschikbarePlekken = data.left || 10;
 
-  const status = document.getElementById("status");
+    const titel = document.getElementById("titel");
+    if (titel) titel.innerText = data.name || "Workshop";
 
-  if (data.left > 0) {
-    status.innerText = data.left + " plekken beschikbaar";
-  } else {
-    status.innerText = "Workshop is VOL";
-    document.getElementById("btn").disabled = true;
+    const status = document.getElementById("status");
+    if (status) {
+      status.innerText = beschikbarePlekken + " plekken beschikbaar";
+    }
+
+    const top = document.getElementById("statusTop");
+    if (top) top.innerText = "Aanmelden workshop";
+
+  } catch (e) {
+    console.log(e);
   }
 }
 
-// 🚀 Verzenden
+// 🚀 verzenden
 function sendData(e) {
   e.preventDefault();
 
-  const personenDivs = document.querySelectorAll(".persoon");
+  const inputs = document.querySelectorAll(".persoon input");
+  if (inputs.length === 0) {
+    alert("Voeg eerst een persoon toe");
+    return;
+  }
+
   let personen = [];
 
-  personenDivs.forEach(div => {
-    const inputs = div.querySelectorAll("input");
-
-  personen.push({
-  naam: inputs[0].value,
-  leeftijd: inputs[1].value,
-  telefoon: inputs[2].value,
-  email: inputs[3].value,
-  sheet: "Sheet2"
+  for (let i = 0; i < inputs.length; i += 4) {
+    personen.push({
+      naam: inputs[i].value,
+      leeftijd: inputs[i+1].value,
+      telefoon: inputs[i+2].value,
+      email: inputs[i+3].value,
+      sheet: sheetName
     });
-  });
-
-  if (personen.length === 0) {
-    alert("Voeg minstens 1 persoon toe");
-    return;
   }
 
-  const aantal = personen.length;
-
-  if (aantal > beschikbarePlekken) {
-    alert("Er zijn nog maar " + beschikbarePlekken + " plekken!");
-    return;
-  }
-
-  document.getElementById("btn").disabled = true;
-  document.getElementById("melding").innerText = "Bezig met verzenden...";
+  document.getElementById("melding").innerText = "Bezig...";
 
   fetch(URL, {
     method: "POST",
     mode: "no-cors",
-    body: JSON.stringify(personen),
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8"
-    }
+    body: JSON.stringify(personen)
   })
   .then(() => {
-    document.getElementById("melding").innerText = "✅ Aanmelding gelukt!";
-    document.getElementById("personen").innerHTML = "";
-    addPersoon();
-    document.getElementById("btn").disabled = false;
+    document.getElementById("melding").innerText = "✅ Gelukt!";
   })
   .catch(() => {
-    document.getElementById("melding").innerText = "❌ Fout bij verzenden";
-    document.getElementById("btn").disabled = false;
+    document.getElementById("melding").innerText = "❌ Fout";
   });
 }
 
-// 🚀 START
-addPersoon();
-updateCount();
-setInterval(updateCount, 2000);
+// START
+window.onload = function() {
+  addPersoon();
+  updateCount();
+};
 </script>
 
 </body>
